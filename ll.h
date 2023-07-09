@@ -2,6 +2,7 @@
 
 class LL {
   NodePtr hol; // head of linked list
+  NodePtr tail; // tail of linked list
   int size;
 
 public:
@@ -13,168 +14,132 @@ public:
   void printListR();
  
   ~LL();
-/* With doubly linked list*/
-/*
- void printListR();
-*/
 };
 
 LL::LL() {
-  this->hol = NULL;
+  hol = NULL;
+  tail = NULL;
   size = 0;
 }
 
 LL::~LL() {
-  cout << "deleting all nodes" << endl;
-  NodePtr t;
-  t = hol;
+  cout << "Deleting all nodes" << endl;
+  NodePtr currentPtr = hol;
   int i;
   for (i = 0; i < size; i++) {
-    hol = hol->get_next();
-    delete t;
-    t = hol;
+    NodePtr nextPtr = currentPtr->get_next();
+    delete currentPtr;
+    currentPtr = nextPtr;
   }
 }
 
-// insert a new value into the list in sorted order
 void LL::insert(int value) {
-  NodePtr newPtr;      // pointer to new node
-  NodePtr previousPtr; // pointer to previous node in list
-  NodePtr currentPtr;  // pointer to current node in list
-
-  newPtr = new Node(value); // create node & put value in
-
-  if (newPtr != NULL) { // is space available
-
-    previousPtr = NULL;
-    currentPtr = hol;
-    // loop to find the correct location in the list
-    while (currentPtr != NULL && value > currentPtr->get_data()) {
-      previousPtr = currentPtr;            // walk to ...
-      currentPtr = currentPtr->get_next(); // ... next node
-                                          
-    } // end while
-
-    // insert new node at beginning of list
-    if (previousPtr == NULL) {
-        newPtr->set_next(hol);
-      if(hol){
-        hol->set_prev(newPtr);
+  NodePtr newPtr = new Node(value);
+  if (newPtr != NULL) {
+    if (isEmpty()) {
+      hol = newPtr;
+      tail = newPtr;
+      newPtr->set_next(newPtr);
+      newPtr->set_prev(newPtr);
+    } else if (value <= hol->get_data()) { // insert at the beginning
+      newPtr->set_next(hol);
+      newPtr->set_prev(tail);
+      hol->set_prev(newPtr);
+      tail->set_next(newPtr);
+      hol = newPtr;
+    } else if (value >= tail->get_data()) { // insert at the end
+      newPtr->set_next(hol);
+      newPtr->set_prev(tail);
+      tail->set_next(newPtr);
+      hol->set_prev(newPtr);
+      tail = newPtr;
+    } else { // insert in the middle
+      NodePtr currentPtr = hol->get_next();
+      while (currentPtr != hol && value > currentPtr->get_data()) {
+        currentPtr = currentPtr->get_next();
       }
-        hol = newPtr;
-       
-      }  // end if
-    else { 
-      // insert new node between previousPtr and currentPtr
+      NodePtr previousPtr = currentPtr->get_prev();
       previousPtr->set_next(newPtr);
       newPtr->set_prev(previousPtr);
-      
       newPtr->set_next(currentPtr);
-      if (currentPtr != nullptr) {
-        currentPtr->set_prev(newPtr);
-      }
-    } // end else
-    ++size;
-  } // end if
-  else {
-    cout << value << " not inserted. No memory available." << endl;
-  } // end else
-} // end function insert
-
-// delete a list element
-int LL::deletes(int value) {
-  NodePtr previousPtr; // pointer to previous node in list
-  NodePtr currentPtr;  // pointer to current node in list
-  NodePtr tempPtr;     // temporary node pointer
-
-  // delete first node
-  if (value == hol->get_data()) {
-    tempPtr = hol;         // hold onto node being removed
-    hol = hol->get_next(); // de-thread the node
-    size--;
-
-    delete tempPtr; // free the de-threaded node
-
-    return value;
-  } // end if
-  else {
-    previousPtr = hol;
-    currentPtr = hol->get_next();
-
-    // loop to find the correct location in the list
-    while (currentPtr != NULL && currentPtr->get_data() != value) {
-      previousPtr = currentPtr;            // walk to ...
-      currentPtr = currentPtr->get_next(); // ... next node
-      if (currentPtr == hol)
-        currentPtr = NULL;
-    } // end while
-
-    // delete node makeat currentPtr
-    if (currentPtr != NULL) {
-      tempPtr = currentPtr;
-      previousPtr->set_next(currentPtr->get_next());
-      currentPtr = currentPtr->get_next();
-    if (currentPtr){
-      currentPtr->set_prev(previousPtr);
+      currentPtr->set_prev(newPtr);
     }
-      delete tempPtr;
-      size--;
-      return value;
-    } // end if
-  }   // end else
+    size++;
+  } else {
+    cout << value << " not inserted. No memory available." << endl;
+  }
+}
 
-  return '\0';
-} // end function delete
-
-// return 1 if the list is empty, 0 otherwise
-int LL::isEmpty() { return hol == NULL; } // end function isEmpty
-
-// print the list
-void LL::printList() {
-  NodePtr currentPtr = hol;
-  // if list is empty
-  if (size == 0) {
+int LL::deletes(int value) {
+  if (isEmpty()) {
     cout << "List is empty." << endl;
-  } // end if
-  else {
-    cout << "The list is:" << endl;
+    return '\0';
+  }
 
-    // while not the end of the list
-    // while ( currentPtr != NULL ) {
-    int i;
-    for (i = 0; i < size; i++) {
-      currentPtr->print();
-      cout << "  ->";
-      currentPtr = currentPtr->get_next();
-    } // end while
+  NodePtr currentPtr = hol;
+  NodePtr previousPtr = tail;
 
-    puts("NULL\n");
-  } // end else
-} // end function printList
+  // Find the node to delete
+  while (currentPtr->get_data() != value && currentPtr->get_next() != hol) {
+    previousPtr = currentPtr;
+    currentPtr = currentPtr->get_next();
+  }
+
+  if (currentPtr->get_data() == value) {
+    if (size == 1) { // Delete the only node in the list
+      hol = NULL;
+      tail = NULL;
+    } else {
+      previousPtr->set_next(currentPtr->get_next());
+      currentPtr->get_next()->set_prev(previousPtr);
+      if (currentPtr == hol) {
+        hol = currentPtr->get_next();
+      } else if (currentPtr == tail) {
+        tail = previousPtr;
+        tail->set_next(hol);  // Update the next pointer of the last node
+      }
+    }
+    delete currentPtr;
+    size--;
+    return value;
+  }
+  return '\0';
+}
+
+
+int LL::isEmpty() {
+  return (hol == NULL);
+}
+
+void LL::printList() {
+  if (isEmpty()) {
+    cout << "List is empty." << endl;
+    return;
+  }
+
+  cout << "The list is:\n";
+  NodePtr currentPtr = hol;
+  do {
+    currentPtr->print();
+    cout << " -> ";
+    currentPtr = currentPtr->get_next();
+  } while (currentPtr != hol);
+  cout << "NULL" << endl;
+}
 
 void LL::printListR() {
-  
-  // if list is empty
-  if (size == 0) {
+  if (isEmpty()) {
     cout << "List is empty." << endl;
-  } // end if
-  else {
-    cout << "The reversed list is:" << endl;
+    return;
+  }
 
-    NodePtr currentPtr = hol;
-    int i;
-    //go to the last node first
-    for(i=0;i<size-1 ;i++){
-    //while(currentPtr->get_next()!=NULL){
-      currentPtr=currentPtr->get_next();
-    }
-    
-    for (i = 0; i < size; i++) {
-      currentPtr->print();
-      cout << "  ->";
-      currentPtr = currentPtr->get_prev();
-    } // end while
+  cout << "The reversed list is:\n";
+  NodePtr currentPtr = tail;
+  do {
+    currentPtr->print();
+    cout << " -> ";
+    currentPtr = currentPtr->get_prev();
+  } while (currentPtr != tail);
+  cout << "NULL" << endl;
+}
 
-    puts(" NULL\n");
-  } // end else
-} // end function printList
